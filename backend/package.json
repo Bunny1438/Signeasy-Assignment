@@ -5,8 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js",
-    "test": "jest --runInBand --forceExit"
+    "dev": "node --watch server.js"
   },
   "jest": {
     "testEnvironment": "node",
