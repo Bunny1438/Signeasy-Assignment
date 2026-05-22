@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signeasy eSignature Demo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f7fa;
+      color: #1a1a2e;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+    }
+
+    header { text-align: center; margin-bottom: 36px; }
+    header h1 { font-size: 1.75rem; font-weight: 700; color: #008be7; }
+    header p  { margin-top: 6px; color: #555; font-size: 0.95rem; }
+
+    .steps-nav {
+      display: flex;
+      margin-bottom: 32px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      overflow: hidden;
+      width: 100%;
+      max-width: 640px;
+    }
+
+    .step-tab {
+      flex: 1;
+      padding: 14px 8px;
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #aaa;
+      border-bottom: 3px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+      user-select: none;
+    }
+    .step-tab.active { color: #008be7; border-bottom-color: #008be7; }
+    .step-tab.done   { color: #22c55e; border-bottom-color: #22c55e; }
+    .step-tab .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: currentColor;
+      color: #fff;
+      font-size: 0.7rem;
+      margin-right: 6px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      padding: 32px;
+      width: 100%;
+      max-width: 640px;
+    }
+    .card h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; color: #1a1a2e; }
+
+    .field { margin-bottom: 18px; }
+    .field label { display: block; font-size: 0.82rem; font-weight: 600; color: #444; margin-bottom: 6px; }
+    .field label .required { color: #e53e3e; margin-left: 2px; }
+    .field input[type="text"],
+    .field input[type="email"] {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    .field input:focus { border-color: #008be7; }
+    .field input.error { border-color: #e53e3e; }
+
+    .field-error { color: #e53e3e; font-size: 0.78rem; margin-top: 4px; }
+
+    .drop-zone {
+      border: 2px dashed #cbd5e0;
+      border-radius: 12px;
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      background: #fafafa;
+    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: #008be7; background: #eff8ff; }
+    .drop-zone.error { border-color: #e53e3e; }
+    .drop-zone input[type="file"] { display: none; }
+    .drop-zone .dz-icon  { font-size: 2rem; margin-bottom: 8px; }
+    .drop-zone .dz-label { font-size: 0.9rem; color: #555; }
+    .drop-zone .dz-hint  { font-size: 0.75rem; color: #aaa; margin-top: 4px; }
+    .drop-zone .dz-selected { margin-top: 10px; font-size: 0.85rem; font-weight: 600; color: #008be7; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary  { background: #008be7; color: #fff; width: 100%; margin-top: 8px; }
+    .btn-primary:hover:not(:disabled)  { background: #0070c0; }
+    .btn-secondary { background: #f0f4f8; color: #1a1a2e; }
+    .btn-secondary:hover:not(:disabled) { background: #e2e8f0; }
+    .btn-success  { background: #22c55e; color: #fff; width: 100%; margin-top: 8px; }
+    .btn-success:hover:not(:disabled)  { background: #16a34a; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .alert {
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 0.88rem;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+    .alert-error   { background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; }
+    .alert-success { background: #f0fff4; border: 1px solid #9ae6b4; color: #276749; }
+    .alert-info    { background: #ebf8ff; border: 1px solid #90cdf4; color: #2b6cb0; }
+    .alert-warning { background: #fffbeb; border: 1px solid #fbd38d; color: #7b4b00; }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.9rem;
+    }
+    .status-row:last-child { border-bottom: none; }
+    .status-label { color: #777; min-width: 140px; }
+    .status-value { font-weight: 600; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .badge-gray   { background: #e2e8f0; color: #4a5568; }
+    .badge-blue   { background: #bee3f8; color: #2b6cb0; }
+    .badge-yellow { background: #fefcbf; color: #7b4b00; }
+    .badge-green  { background: #c6f6d5; color: #276749; }
+    .badge-red    { background: #fed7d7; color: #c53030; }
+
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .poll-bar-wrap { background: #e2e8f0; border-radius: 4px; height: 4px; margin: 16px 0; overflow: hidden; }
+    .poll-bar { height: 100%; background: #008be7; border-radius: 4px; transition: width 1s linear; }
+    .poll-info { font-size: 0.78rem; color: #888; text-align: right; margin-top: -10px; margin-bottom: 16px; }
+
+    .hidden { display: none !important; }
+    .mt-16  { margin-top: 16px; }
+    .row { display: flex; gap: 12px; }
+    .row .field { flex: 1; }
+
+    #health-banner { max-width: 640px; width: 100%; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>✍️ Signeasy eSignature Demo</h1>
+  <p>Upload a document, send for signature, track status, download signed copy.</p>
+</header>
+
+<div id="health-banner"></div>
+
+<div class="steps-nav">
+  <div class="step-tab active" id="tab-1"><span class="num">1</span> Upload &amp; Send</div>
+  <div class="step-tab"        id="tab-2"><span class="num">2</span> Sent</div>
+  <div class="step-tab"        id="tab-3"><span class="num">3</span> Track Status</div>
+  <div class="step-tab"        id="tab-4"><span class="num">4</span> Download</div>
+</div>
+
+<!-- Step 1: Upload & Send -->
+<div class="card" id="step-1">
+  <h2>Upload document &amp; enter signer details</h2>
+  <div id="step1-alert"></div>
+
+  <div class="field">
+    <label>Document <span class="required">*</span></label>
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="dz-icon">📄</div>
+      <div class="dz-label">Click to browse or drag &amp; drop</div>
+      <div class="dz-hint">PDF, DOC, DOCX — max 25 MB</div>
+      <div class="dz-selected hidden" id="file-name-display"></div>
+      <input type="file" id="file-input" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+    </div>
+    <div class="field-error hidden" id="err-file"></div>
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label>First name <span class="required">*</span></label>
+      <input type="text" id="first-name" placeholder="Jane" autocomplete="given-name" />
+      <div class="field-error hidden" id="err-first-name"></div>
+    </div>
+    <div class="field">
+      <label>Last name</label>
+      <input type="text" id="last-name" placeholder="Doe" autocomplete="family-name" />
+      <div class="field-error hidden" id="err-last-name"></div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Email address <span class="required">*</span></label>
+    <input type="email" id="signer-email" placeholder="jane.doe@example.com" autocomplete="email" />
+    <div class="field-error hidden" id="err-email"></div>
+  </div>
+
+  <button class="btn btn-primary" id="btn-send" onclick="handleSend()">
+    Send for Signature
+  </button>
+</div>
+
+<!-- Step 2: Sent confirmation -->
+<div class="card hidden" id="step-2">
+  <h2>✅ Signature request sent!</h2>
+  <div class="alert alert-success" id="sent-summary"></div>
+  <div class="status-row">
+    <span class="status-label">Envelope ID</span>
+    <span class="status-value" id="display-envelope-id">—</span>
+  </div>
+  <button class="btn btn-primary mt-16" onclick="goToStep(3)">Track Signing Status →</button>
+</div>
+
+<!-- Step 3: Status tracking -->
+<div class="card hidden" id="step-3">
+  <h2>📋 Signing status</h2>
+  <div id="step3-alert"></div>
+  <div class="status-row">
+    <span class="status-label">Envelope ID</span>
+    <span class="status-value" id="st-envelope-id">—</span>
+  </div>
+  <div class="status-row">
+    <span class="status-label">Envelope status</span>
+    <span class="status-value" id="st-envelope-status">—</span>
+  </div>
+  <div class="status-row">
+    <span class="status-label">Signer email</span>
+    <span class="status-value" id="st-signer-email">—</span>
+  </div>
+  <div class="status-row">
+    <span class="status-label">Signer status</span>
+    <span class="status-value" id="st-signer-status">—</span>
+  </div>
+  <div class="status-row">
+    <span class="status-label">Last updated</span>
+    <span class="status-value" id="st-last-updated">—</span>
+  </div>
+
+  <div id="poll-section">
+    <div class="poll-bar-wrap"><div class="poll-bar" id="poll-bar" style="width:0%"></div></div>
+    <div class="poll-info" id="poll-info">Next check in 15s</div>
+  </div>
+
+  <div style="display:flex; gap:10px; margin-top:8px;">
+    <button class="btn btn-secondary" id="btn-refresh" onclick="checkStatus(true)" style="flex:1">🔄 Refresh now</button>
+    <button class="btn btn-primary hidden" id="btn-to-download" onclick="goToStep(4)" style="flex:1">Download Signed Doc →</button>
+  </div>
+</div>
+
+<!-- Step 4: Download -->
+<div class="card hidden" id="step-4">
+  <h2>⬇️ Download signed document</h2>
+  <div class="alert alert-success">All parties have signed. The signed document is ready for download.</div>
+  <div id="step4-alert"></div>
+  <button class="btn btn-success" id="btn-download" onclick="handleDownload()">Download Signed PDF</button>
+  <button class="btn btn-secondary mt-16" onclick="resetAll()" style="width:100%">Start new request</button>
+</div>
+
+<script>
+  'use strict';
+
+  const API_BASE        = 'http://localhost:3001/api';
+  const POLL_INTERVAL_MS = 15000;
+
+  const state = {
+    envelopeId:     null,
+    sourceId:       null,
+    _droppedFile:   null,
+    pollTimer:      null,
+    pollCountdown:  null,
+    pollSecondsLeft: 0,
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    checkHealth();
+    setupDropZone();
+    document.getElementById('first-name').addEventListener('blur', validateFirstName);
+    document.getElementById('last-name').addEventListener('blur', validateLastName);
+    document.getElementById('signer-email').addEventListener('blur', validateEmail);
+  });
+
+  // ── Health check ─────────────────────────────────────────────────────────────
+  async function checkHealth() {
+    const banner = document.getElementById('health-banner');
+    try {
+      const data = await apiFetch('/health');
+      const div = document.createElement('div');
+      div.className = 'alert alert-info';
+      div.innerHTML = `Connected as <strong>${data.user.first_name} ${data.user.last_name}</strong> (${data.user.email}) — ${data.user.envelope_credits_available} envelope credits available.`;
+      banner.appendChild(div);
+    } catch (err) {
+      const div = document.createElement('div');
+      div.className = 'alert alert-error';
+      div.textContent = `⚠️ Cannot connect to backend: ${err.message}. Make sure the server is running on port 3001.`;
+      banner.appendChild(div);
+    }
+  }
+
+  // ── Step navigation ──────────────────────────────────────────────────────────
+  function goToStep(n) {
+    for (let i = 1; i <= 4; i++) {
+      document.getElementById(`tab-${i}`).className =
+        i < n ? 'step-tab done' : i === n ? 'step-tab active' : 'step-tab';
+      document.getElementById(`step-${i}`).classList.toggle('hidden', i !== n);
+    }
+    if (n === 3) startPolling();
+  }
+
+  // ── File drop zone ───────────────────────────────────────────────────────────
+  function setupDropZone() {
+    const zone  = document.getElementById('drop-zone');
+    const input = document.getElementById('file-input');
+
+    zone.addEventListener('dragover',  (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', ()  => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+    });
+    input.addEventListener('change', () => { if (input.files[0]) setFile(input.files[0]); });
+  }
+
+  function setFile(file) {
+    const bytes = file.size;
+    const size  = bytes < 1024 * 1024
+      ? `${(bytes / 1024).toFixed(1)} KB`
+      : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    const display = document.getElementById('file-name-display');
+    display.textContent = `📎 ${file.name} (${size})`;
+    display.classList.remove('hidden');
+    clearFieldError('err-file');
+    document.getElementById('drop-zone').classList.remove('error');
+    state._droppedFile = file;
+  }
+
+  function getSelectedFile() {
+    return state._droppedFile || document.getElementById('file-input').files[0] || null;
+  }
+
+  // ── Validation ───────────────────────────────────────────────────────────────
+  const INVALID_CHARS = /[,|#@!$%]/;
+
+  function validateFirstName() {
+    const val = document.getElementById('first-name').value.trim();
+    if (!val)                       return fieldError('err-first-name', 'first-name', 'First name is required.');
+    if (INVALID_CHARS.test(val))    return fieldError('err-first-name', 'first-name', 'Invalid characters: , | # @ ! $ %');
+    clearFieldError('err-first-name');
+    document.getElementById('first-name').classList.remove('error');
+    return true;
+  }
+
+  function validateLastName() {
+    const val = document.getElementById('last-name').value.trim();
+    if (val && INVALID_CHARS.test(val)) return fieldError('err-last-name', 'last-name', 'Invalid characters: , | # @ ! $ %');
+    clearFieldError('err-last-name');
+    document.getElementById('last-name').classList.remove('error');
+    return true;
+  }
+
+  function validateEmail() {
+    const val = document.getElementById('signer-email').value.trim();
+    if (!val)                                        return fieldError('err-email', 'signer-email', 'Email is required.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val))    return fieldError('err-email', 'signer-email', 'Please enter a valid email address.');
+    clearFieldError('err-email');
+    document.getElementById('signer-email').classList.remove('error');
+    return true;
+  }
+
+  function validateFile() {
+    const file    = getSelectedFile();
+    const zone    = document.getElementById('drop-zone');
+    const ALLOWED = ['application/pdf', 'application/msword',
+                     'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!file) {
+      zone.classList.add('error');
+      return fileError('Please select a document to upload.');
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      zone.classList.add('error');
+      return fileError('File is too large. Maximum size is 25 MB.');
+    }
+    if (!ALLOWED.includes(file.type)) {
+      zone.classList.add('error');
+      return fileError('Only PDF, DOC, and DOCX files are allowed.');
+    }
+    return true;
+  }
+
+  function fieldError(errId, inputId, msg) {
+    const el = document.getElementById(errId);
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    document.getElementById(inputId)?.classList.add('error');
+    return false;
+  }
+
+  function fileError(msg) {
+    const el = document.getElementById('err-file');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    return false;
+  }
+
+  function clearFieldError(errId) {
+    const el = document.getElementById(errId);
+    el.textContent = '';
+    el.classList.add('hidden');
+  }
+
+  // ── Send flow ────────────────────────────────────────────────────────────────
+  async function handleSend() {
+    clearAlert('step1-alert');
+
+    const fileOk      = validateFile();
+    const firstNameOk = validateFirstName();
+    const lastNameOk  = validateLastName();
+    const emailOk     = validateEmail();
+    if (!fileOk || !firstNameOk || !lastNameOk || !emailOk) return;
+
+    const file      = getSelectedFile();
+    const firstName = document.getElementById('first-name').value.trim();
+    const lastName  = document.getElementById('last-name').value.trim();
+    const email     = document.getElementById('signer-email').value.trim();
+    const btn       = document.getElementById('btn-send');
+
+    // Step A: upload
+    setLoading(btn, true, 'Uploading document...');
+    let originalId;
+    try {
+      const formData = new FormData();
+      formData.append('file', file, file.name);
+      const data = await apiFetch('/upload', { method: 'POST', body: formData });
+      originalId = data.original_id;
+    } catch (err) {
+      setLoading(btn, false, 'Send for Signature');
+      showAlert('step1-alert', 'error', `Upload failed: ${err.message}`);
+      return;
+    }
+
+    // Step B: create envelope
+    setLoading(btn, true, 'Sending signature request...');
+    try {
+      const data = await apiFetch('/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ original_id: originalId, signer_first_name: firstName, signer_last_name: lastName, signer_email: email }),
+      });
+      state.envelopeId = data.envelope_id;
+    } catch (err) {
+      setLoading(btn, false, 'Send for Signature');
+      showAlert('step1-alert', 'error', `Failed to send: ${err.message}`);
+      return;
+    }
+
+    setLoading(btn, false, 'Send for Signature');
+
+    // Build sent-summary without innerHTML to avoid XSS on the email value
+    const summary = document.getElementById('sent-summary');
+    summary.innerHTML = '';
+    summary.appendChild(document.createTextNode('Signature request sent to '));
+    const strong = document.createElement('strong');
+    strong.textContent = email;
+    summary.appendChild(strong);
+    summary.appendChild(document.createTextNode('. They will receive an email from Signeasy with a link to sign.'));
+    document.getElementById('display-envelope-id').textContent = state.envelopeId;
+
+    goToStep(2);
+  }
+
+  // ── Status polling ───────────────────────────────────────────────────────────
+  function startPolling() {
+    stopPolling();
+    checkStatus(true);
+    scheduleNextPoll();
+  }
+
+  function stopPolling() {
+    if (state.pollTimer)     { clearTimeout(state.pollTimer);   state.pollTimer    = null; }
+    if (state.pollCountdown) { clearInterval(state.pollCountdown); state.pollCountdown = null; }
+  }
+
+  function scheduleNextPoll() {
+    state.pollSecondsLeft = POLL_INTERVAL_MS / 1000;
+    state.pollCountdown = setInterval(() => {
+      const clamped = Math.max(0, --state.pollSecondsLeft);
+      document.getElementById('poll-bar').style.width  = `${Math.min(100, (1 - clamped / (POLL_INTERVAL_MS / 1000)) * 100)}%`;
+      document.getElementById('poll-info').textContent = `Next check in ${clamped}s`;
+      if (state.pollSecondsLeft <= 0) { clearInterval(state.pollCountdown); state.pollCountdown = null; }
+    }, 1000);
+    state.pollTimer = setTimeout(() => { checkStatus(false); scheduleNextPoll(); }, POLL_INTERVAL_MS);
+  }
+
+  async function checkStatus(isManual = false) {
+    if (!state.envelopeId) return;
+    const btn = document.getElementById('btn-refresh');
+    if (isManual) setLoading(btn, true, 'Checking...');
+
+    try {
+      const data = await apiFetch(`/status/${state.envelopeId}`);
+      document.getElementById('st-envelope-id').textContent     = data.envelope_id;
+      document.getElementById('st-signer-email').textContent    = data.recipient_email ?? '—';
+      document.getElementById('st-envelope-status').innerHTML   = statusBadge('envelope',  data.status);
+      document.getElementById('st-signer-status').innerHTML     = statusBadge('recipient', data.recipient_status);
+      document.getElementById('st-last-updated').textContent    = data.last_modified_time ? new Date(data.last_modified_time * 1000).toLocaleString() : '—';
+      clearAlert('step3-alert');
+
+      if (data.sources?.length > 0) state.sourceId = data.sources[0].id;
+
+      if (data.status === 'complete') {
+        stopPolling();
+        document.getElementById('poll-section').classList.add('hidden');
+        document.getElementById('btn-to-download').classList.remove('hidden');
+        showAlert('step3-alert', 'success', '🎉 All parties have signed! You can now download the signed document.');
+      } else if (data.status === 'recipient_declined') {
+        stopPolling();
+        document.getElementById('poll-section').classList.add('hidden');
+        showAlert('step3-alert', 'error', 'The signer declined to sign this document.');
+      } else if (data.status === 'canceled') {
+        stopPolling();
+        document.getElementById('poll-section').classList.add('hidden');
+        showAlert('step3-alert', 'warning', 'This signature request has been canceled.');
+      }
+    } catch (err) {
+      showAlert('step3-alert', 'error', `Could not fetch status: ${err.message}`);
+    }
+
+    if (isManual) setLoading(btn, false, '🔄 Refresh now');
+  }
+
+  // ── Download ─────────────────────────────────────────────────────────────────
+  async function handleDownload() {
+    if (!state.envelopeId || !state.sourceId) {
+      showAlert('step4-alert', 'error', 'Missing envelope or source ID. Cannot download.');
+      return;
+    }
+    const btn = document.getElementById('btn-download');
+    setLoading(btn, true, 'Downloading...');
+    clearAlert('step4-alert');
+    try {
+      const response = await fetch(`${API_BASE}/download/${state.envelopeId}/${state.sourceId}`);
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || `Server returned ${response.status}`);
+      }
+      const blob = await response.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = Object.assign(document.createElement('a'), { href: url, download: `signed-document-${state.envelopeId}.pdf` });
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showAlert('step4-alert', 'error', `Download failed: ${err.message}`);
+    }
+    setLoading(btn, false, 'Download Signed PDF');
+  }
+
+  // ── Reset ────────────────────────────────────────────────────────────────────
+  function resetAll() {
+    stopPolling();
+    state.envelopeId   = null;
+    state.sourceId     = null;
+    state._droppedFile = null;
+
+    document.getElementById('file-input').value = '';
+    document.getElementById('file-name-display').classList.add('hidden');
+    document.getElementById('drop-zone').classList.remove('error');
+    ['first-name', 'last-name', 'signer-email'].forEach((id) => {
+      document.getElementById(id).value = '';
+      document.getElementById(id).classList.remove('error');
+    });
+    ['err-file', 'err-first-name', 'err-last-name', 'err-email'].forEach(clearFieldError);
+    ['step1-alert', 'step3-alert', 'step4-alert'].forEach(clearAlert);
+
+    document.getElementById('poll-section').classList.remove('hidden');
+    document.getElementById('btn-to-download').classList.add('hidden');
+    document.getElementById('poll-bar').style.width = '0%';
+
+    goToStep(1);
+  }
+
+  // ── Utilities ────────────────────────────────────────────────────────────────
+  async function apiFetch(path, options = {}) {
+    const response    = await fetch(`${API_BASE}${path}`, options);
+    const contentType = response.headers.get('content-type') || '';
+    const isJson      = contentType.includes('application/json');
+    const body        = isJson ? await response.json() : await response.text();
+    if (!response.ok) throw new Error(isJson && body.error ? body.error : `Request failed (${response.status})`);
+    return body;
+  }
+
+  function showAlert(id, type, text) {
+    const el = document.getElementById(id);
+    el.className = `alert alert-${type}`;
+    el.textContent = text;
+  }
+
+  function clearAlert(id) {
+    const el = document.getElementById(id);
+    el.className = '';
+    el.textContent = '';
+  }
+
+  function setLoading(btn, loading, label) {
+    btn.disabled = loading;
+    btn.innerHTML = loading ? `<span class="spinner"></span> ${label}` : label;
+  }
+
+  function statusBadge(kind, value) {
+    const maps = {
+      envelope:  { incomplete: ['gray','Incomplete (waiting)'], complete: ['green','Complete ✓'], recipient_declined: ['red','Declined'], canceled: ['red','Canceled'] },
+      recipient: { not_viewed: ['yellow','Not opened yet'], viewed: ['blue','Viewed'], finalized: ['green','Signed ✓'], declined: ['red','Declined'] },
+    };
+    const [color, label] = maps[kind][value] ?? ['gray', value ?? '—'];
+    return `<span class="badge badge-${color}">${label}</span>`;
+  }
+</script>
+</body>
+</html>
